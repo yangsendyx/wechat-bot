@@ -35,7 +35,7 @@ export async function defaultMessage(msg, bot) {
         if ((Date.now() - 1e3 * msg.payload.timestamp) > 3000) return
         // if (!content.startsWith('? ') && !content.startsWith('？ ') && !content.startsWith('> ')) return
         try {
-            // const trimed = content.substr(2)
+            const trimed = content// .substr(2)
             // if (trimed.length < 5) return
 
             // 区分群聊和私聊
