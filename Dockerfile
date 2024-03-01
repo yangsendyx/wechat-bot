@@ -4,8 +4,8 @@ FROM node:19 as builder-default
 ENV NPM_REGISTRY="https://registry.npmjs.org"
 
 FROM node:19 as builder-aliyun
-
 ENV NPM_REGISTRY="https://registry.npmmirror.com"
+
 RUN sed -i s/deb.debian.org/mirrors.aliyun.com/g /etc/apt/sources.list \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo 'Asia/Shanghai' >/etc/timezone
 

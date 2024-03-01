@@ -10,22 +10,6 @@ env:
   IMAGE_NAME: yangsendyx/wechat-bot
 
 jobs:
-#   get-tags:
-#     runs-on: ubuntu-latest
-#     env:
-#       TZ: Asia/Shanghai
-#     outputs:
-#       tags: ${{ steps.output-id.outputs.v }}
-#     steps:
-#       - uses: actions/checkout@v3
-#       - id: output-id
-#         run: |
-#           VERSION=dev
-#           if [[ $GITHUB_REF == refs/tags/* ]]; then
-#             VERSION=${GITHUB_REF#refs/tags/v}
-#           fi
-#           echo "v=${VERSION}" >> $GITHUB_OUTPUT
-
   push-ghcr:
     runs-on: ubuntu-latest
     env:
@@ -69,7 +53,6 @@ jobs:
           platforms: |
             linux/amd64
             linux/arm64
-            windows/amd64
           build-args: |
             COMMIT_SHA=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
           push: true
