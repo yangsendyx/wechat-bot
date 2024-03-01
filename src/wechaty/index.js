@@ -70,7 +70,7 @@ bot.on('logout', onLogout)
 // 收到消息
 bot.on('message', onMessage)
 // 添加好友
-bot.on('friendship', onFriendShip)
+// bot.on('friendship', onFriendShip)
 
 // 启动微信机器人
 bot
