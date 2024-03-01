@@ -32,7 +32,9 @@ export async function defaultMessage(msg, bot) {
         isAlias && !room ? `| alias: ${alias}` : '',
     );
 
-    const obj = isRoom && room ? room : contact;
+    const obj = isRoom && room ? room : (
+        isAlias && !room ? contact : null
+    );
     try {
         const useAudio = content.indexOf('语音') !== -1;
         const msg = content.replace(`@${botName}`, '')
