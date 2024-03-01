@@ -1,0 +1,54 @@
+name: docker image ci
+
+on:
+  workflow_dispatch: #github页面手动触发
+  push:
+    branches:
+      - dev
+
+env:
+  IMAGE_NAME: yangsendyx/wechat-bot
+
+jobs:
+  get-tags:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
+    outputs:
+      tags: ${{ steps.output-id.outputs.v }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: output-id
+        run: |
+          VERSION=dev
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          echo "v=${VERSION}" >> $GITHUB_OUTPUT
+
+  push-ghcr:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
+      REGISTRY: ghcr.io
+    steps:
+      - uses: actions/checkout@v3
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+      - name: Build && Push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: |
+            linux/386
+            linux/arm64
+            windows/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ needs.get-tags.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
