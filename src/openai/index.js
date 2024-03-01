@@ -35,7 +35,7 @@ function markdownToText(markdown) {
 async function createSpeech(text, prompt) {
     const audio = await openai.audio.speech.create({
         model: "tts-1",
-        voice: "echo",
+        voice: "alloy",
         input: text,
         response_format: 'mp3',
     });
