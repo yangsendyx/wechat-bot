@@ -1,6 +1,6 @@
 // import { getChatGPTReply as getReply } from '../chatgpt/index.js'
 import { getOpenAiReply as getReply } from '../openai/index.js'
-import { botName, roomWhiteList, aliasWhiteList } from '../../config.js'
+import { botName, roomWhiteList, aliasWhiteList, audioPrefix } from '../../config.js'
 
 /**
  * 默认消息发送
@@ -8,6 +8,8 @@ import { botName, roomWhiteList, aliasWhiteList } from '../../config.js'
  * @param bot
  * @returns {Promise<void>}
  */
+
+// const audioTextReg = new RegExp(`^${audioPrefix.join('|')}`);
 export async function defaultMessage(msg, bot) {
     const contact = msg.talker() // 发消息人
     const receiver = msg.to() // 消息接收人
@@ -22,36 +24,27 @@ export async function defaultMessage(msg, bot) {
     const isAlias = aliasWhiteList.includes(remarkName) || aliasWhiteList.includes(name) // 发消息的人是否在联系人白名单内
     const isBotSelf = botName === remarkName || botName === name // 是否是机器人自己
 
-    // TODO 你们可以根据自己的需求修改这里的逻辑
-    if (isText && !isBotSelf) {
-        // console.log(JSON.stringify(msg))
-        console.log(
-            '>',
-            content,
-            isRoom && room ? `| room: ${roomName}` : '',
-            isAlias && !room ? `| alias: ${alias}` : '',
-        );
+    if (isBotSelf || !isText) return;
+    console.log(
+        '>',
+        content,
+        isRoom && room ? `| room: ${roomName}` : '',
+        isAlias && !room ? `| alias: ${alias}` : '',
+    );
 
-        if ((Date.now() - 1e3 * msg.payload.timestamp) > 3000) return
-        // if (!content.startsWith('? ') && !content.startsWith('？ ') && !content.startsWith('> ')) return
-        try {
-            // const trimed = content.substr(2)
-            // if (trimed.length < 5) return
+    const obj = isRoom && room ? room : contact;
+    try {
+        const useAudio = content.indexOf('语音') !== -1;
+        const msg = content.replace(`@${botName}`, '')
+                        .replace('语音回复', '')
+                        .replace('语音', '');
 
-            // 区分群聊和私聊
-            if (isRoom && room) {
-                const msg = content.replace(`@${botName}`, '')
-                await room.say(await getReply(msg))
-                return
-            }
-            // 私人聊天，白名单内的直接发送
-            if (isAlias && !room) {
-                await contact.say(await getReply(content))
-            }
-        } catch (e) {
-            console.error(e)
-            await contact.say('我出错了，等会再问吧 o(╥﹏╥)o');
-        }
+        const reply = await getReply(msg, useAudio);
+        await obj?.say(reply.text);
+        if (useAudio) obj?.say(reply.audio);
+    } catch (e) {
+        console.error(e)
+        obj?.say('我出错了，等会再问吧 o(╥﹏╥)o');
     }
 }
 
@@ -122,3 +115,5 @@ async function splitMessage(text) {
     }
     return realText
 }
+
+

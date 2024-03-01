@@ -1,50 +1,28 @@
 import { remark } from 'remark'
 import stripMarkdown from 'strip-markdown'
-import { Configuration, OpenAIApi } from 'openai'
+import OpenAI from "openai";
 import dotenv from 'dotenv'
+import { FileBox }  from 'file-box'
+
 const env = dotenv.config().parsed // 环境参数
-
-const configuration = new Configuration({
+const openai = new OpenAI({
     apiKey: env.OPENAI_API_KEY,
-    basePath: env.OPENAI_API_URL,
+    baseURL: env.OPENAI_API_URL,
 })
-const openai = new OpenAIApi(configuration)
 
-export async function getOpenAiReply(prompt) {
-    // console.log('🚀🚀🚀 / prompt', prompt)
-    //let chosen_model = 'text-davinci-003'
-    let chosen_model = 'gpt-3.5-turbo'
-    let reply = ''
-    //'gpt-3.5-turbo',
-    if (chosen_model == 'text-davinci-003') {
-        // console.log('🚀🚀🚀 / Using model', chosen_model)
-        const response = await openai.createCompletion({
-            model: chosen_model,
-            prompt: prompt,
-            temperature: 0.8, // 每次返回的答案的相似度0-1（0：每次都一样，1：每次都不一样）
-            max_tokens: 4000,
-            top_p: 1,
-            frequency_penalty: 0.0,
-            presence_penalty: 0.6,
-            stop: [' Human:', ' AI:'],
-        })
+export async function getOpenAiReply(prompt, useAudio) {
+    const resp = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            { "role": "system", content: "You are a personal assistant." },
+            { "role": "user", content: prompt }
+        ]
+    })
 
-        reply = markdownToText(response.data.choices[0].text)
-    } else if (chosen_model == 'gpt-3.5-turbo') {
-        // console.log('🚀🚀🚀 / Using model', chosen_model)
-        const response = await openai.createChatCompletion({
-            model: chosen_model,
-            messages: [
-                { "role": "system", content: "You are a personal assistant." },
-                { "role": "user", content: prompt }
-            ]
-        })
+    const reply = markdownToText(resp.choices[0].message.content)
 
-        reply = markdownToText(response.data.choices[0].message.content)
-    }
-    // console.log('🚀🚀🚀 / reply', reply)
-    // return `${reply}\nVia ${chosen_model}`
-    return reply;
+    if (!useAudio) return { text: reply };
+    return createSpeech(reply, prompt);
 }
 
 function markdownToText(markdown) {
@@ -52,6 +30,22 @@ function markdownToText(markdown) {
         .use(stripMarkdown)
         .processSync(markdown ?? '')
         .toString()
+}
+
+async function createSpeech(text, prompt) {
+    const audio = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: "echo",
+        input: text,
+        response_format: 'mp3',
+    });
+
+    const name = prompt.length > 9 ? prompt.substr(0, 10) + '...' : prompt;
+    const buffer = Buffer.from(await audio.arrayBuffer());
+    return {
+        text,
+        audio: FileBox.fromBuffer(buffer, `${name}.mp3`),
+    };
 }
 
 
