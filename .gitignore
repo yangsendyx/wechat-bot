@@ -6,3 +6,5 @@ package-lock.json
 yarn.lock
 Chromium.app
 config.js
+data/
+files/

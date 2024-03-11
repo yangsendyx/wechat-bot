@@ -1,6 +1,8 @@
 import { WechatyBuilder, ScanStatus, log } from 'wechaty'
 import qrTerminal from 'qrcode-terminal'
-import { defaultMessage, shardingMessage } from './sendMessage.js'
+import { defaultMessage } from './sendMessage.js'
+import { executablePath } from 'puppeteer'
+
 // 扫码
 function onScan(qrcode, status) {
     if (status === ScanStatus.Waiting || status === ScanStatus.Timeout) {
@@ -8,6 +10,7 @@ function onScan(qrcode, status) {
         qrTerminal.generate(qrcode, { small: true })
         const qrcodeImageUrl = ['https://api.qrserver.com/v1/create-qr-code/?data=', encodeURIComponent(qrcode)].join('')
         console.log('onScan:', qrcodeImageUrl, ScanStatus[status], status)
+        // TODO 发通知重新扫码
     } else {
         log.info('onScan: %s(%s)', ScanStatus[status], status)
     }
@@ -45,19 +48,16 @@ async function onFriendShip(friendship) {
 async function onMessage(msg) {
     // 默认消息回复
     await defaultMessage(msg, bot)
-    // 消息分片
-    // await shardingMessage(msg,bot)
 }
 
 // 初始化机器人
-const CHROME_BIN = process.env.CHROME_BIN ? { endpoint: process.env.CHROME_BIN } : {}
 export const bot = WechatyBuilder.build({
     name: 'WechatEveryDay',
     puppet: 'wechaty-puppet-wechat4u', // 如果有token，记得更换对应的puppet
     // puppet: 'wechaty-puppet-wechat', // 如果 wechaty-puppet-wechat 存在问题，也可以尝试使用上面的 wechaty-puppet-wechat4u ，记得安装 wechaty-puppet-wechat4u
     puppetOptions: {
         uos: true,
-        ...CHROME_BIN
+        endpoint: executablePath(),
     },
 })
 
