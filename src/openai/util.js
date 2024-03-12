@@ -7,20 +7,17 @@ import dotenv from 'dotenv'
 import micSdk from 'microsoft-cognitiveservices-speech-sdk';
 import puppeteer, { executablePath } from 'puppeteer';
 import fs from 'fs';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import WXVoice from 'wx-voice';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const promiseExec = promisify(exec);
-
 const env = dotenv.config().parsed; // 环境参数
 const speechConfig = micSdk.SpeechConfig.fromSubscription(
     env.AZURE_SPEECH_KEY,
     env.AZURE_SPEECH_REGION,
 );
 speechConfig.speechSynthesisOutputFormat = 5;
-// speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural";
-speechConfig.speechSynthesisVoiceName = "zh-CN-henan-YundengNeural";
+speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural";
+// speechConfig.speechSynthesisVoiceName = "zh-CN-henan-YundengNeural";
 
 const getType = {
     jpeg: function (uint8Array) {
@@ -84,14 +81,6 @@ export function markdownToText(markdown) {
 }
 
 export async function createSpeech(text) {
-    /* const audio = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: "alloy",
-        input: text,
-        response_format: 'mp3',
-    });
-    const buffer = Buffer.from(await audio.arrayBuffer()); */
-
     const buffer = await (new Promise((r, j) => {
         const synthesizer = new micSdk.SpeechSynthesizer(speechConfig);
         synthesizer.speakTextAsync(
@@ -106,6 +95,7 @@ export async function createSpeech(text) {
             }
         );
     }));
+
     return buffer;
 }
 
@@ -172,7 +162,7 @@ export async function createFileAndIndex(
     }
 }
 
-export async function getPathFromUrlOrFile(urlOrFile) {
+export async function getPathFromUrlOrFile(urlOrFile, isAudio) {
     const accept = ['txt', 'docx', 'csv', 'pdf', 'md', 'html'];
     const basePath = path.resolve(`${__dirname}/../../files`);
     let filePath = '';
@@ -191,7 +181,7 @@ export async function getPathFromUrlOrFile(urlOrFile) {
 
     if (urlOrFile._name && urlOrFile.buffer) {
         const type = urlOrFile._name?.split('.')?.pop();
-        if (!type || !accept.find(s => s === type)) {
+        if (!isAudio && (!type || !accept.find(s => s === type))) {
             throw new Error('[Error]: 该文件类型不支持');
         }
 
@@ -201,5 +191,25 @@ export async function getPathFromUrlOrFile(urlOrFile) {
 
     if (!filePath) throw new Error('[Error]: 保存文件异常！');
     return filePath;
+}
+
+export async function silk2mp3(path) {
+    const arr = path.split('/');
+    const name = arr.pop().split('.')[0];
+    const nPath = `${arr.join('/')}/${name}.mp3`;
+    
+    return new Promise((r, j) => {
+        const voice = new WXVoice();
+        voice.on('error', err => j(err));
+        voice.decode(
+            path,
+            nPath,
+            { format: 'mp3' },
+            file => {
+                fs.unlinkSync(path);
+                r(nPath);
+            },
+        );
+    });
 }
 

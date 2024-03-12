@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "node ./index.js",
-    "test": "node ./src/wechaty/testMessage.js"
+    "test": "node ./src/wechaty/testMessage.js",
+    "link": "cd node_modules/wx-voice/ && npm link"
   },
   "author": "rongding",
   "license": "ISC",
@@ -26,6 +27,7 @@
     "strip-markdown": "^5.0.0",
     "wechaty": "^1.20.2",
     "wechaty-puppet-wechat": "^1.18.4",
-    "wechaty-puppet-wechat4u": "^1.14.14"
+    "wechaty-puppet-wechat4u": "^1.14.14",
+    "wx-voice": "^0.2.1"
   }
 }

@@ -3,6 +3,7 @@ import {
     getOpenAiReply,
     getOpenAiImage,
     getOpenAiVision,
+    getOpenAiWishper,
     uploadFileAndIndex,
     getDocReplyByFastGPT,
 } from '../openai/index.js'
@@ -110,8 +111,8 @@ async function getReply(content, isPrivate, msg, bot) {
 async function getReplyPrivate(content, msg, bot) {
     const type = msg.type();
     if (type === bot.Message.Type.Audio) {
-        // return (await getOpenAiWishper(text));
-        return { text: '[待完善功能]' };
+        const file = await msg.toFileBox();
+        return (await getOpenAiWishper(file));
     }
     if (type === bot.Message.Type.Attachment) {
         const file = await msg.toFileBox();
@@ -120,7 +121,7 @@ async function getReplyPrivate(content, msg, bot) {
 
     const [, _cmd, _text] = content?.match?.(/^([vV]\d+)([\s\S]+)?$/) || [];
     const cmd = _cmd?.toLocaleLowerCase?.();
-    if (!cmd || /^v(2|3|4|5)$/.test(cmd)) {
+    if (!cmd || /^v(1|2|3|4|5)$/.test(cmd)) {
         return (await getReplyPublic(content));
     }
 }

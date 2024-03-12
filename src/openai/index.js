@@ -1,14 +1,16 @@
+import fs from 'fs';
+import https from 'https';
 import OpenAI from "openai";
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { FileBox } from 'file-box';
-import https from 'https';
 import {
     createSpeech,
     markdownToText,
     judgeImgType,
     createFileAndIndex,
     getPathFromUrlOrFile,
+    silk2mp3,
 } from './util.js';
 
 const env = dotenv.config().parsed; // 环境参数
@@ -17,16 +19,26 @@ const openai = new OpenAI({
     baseURL: env.OPENAI_API_URL,
 });
 
-export async function getOpenAiWishper() {
-    const transcription = await openai.audio.transcriptions.create({
-        file: fs.createReadStream("audio.mp3"),
+// const MODEL = 'gpt-4';
+const MODEL = 'gpt-3.5-turbo';
+
+export async function getOpenAiWishper(file) {
+    const path = await getPathFromUrlOrFile(file, true);
+    const nPath = await silk2mp3(path);
+    // flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm
+    const resp = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(nPath),
         model: "whisper-1",
     });
+    fs.unlinkSync(nPath);
+
+    if (!resp.text) return { text: '你说了啥~ 我听不清呢\n┓( ´∀` )┏' };
+    return (await getOpenAiReply(resp.text, true));
 }
 
 export async function getOpenAiReply(prompt, useAudio) {
     const resp = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: MODEL,
         messages: [
             { "role": "system", content: "你是一个优秀的人工智能助手。" },
             { "role": "user", content: prompt }
@@ -35,23 +47,27 @@ export async function getOpenAiReply(prompt, useAudio) {
     const reply = markdownToText(resp.choices[0].message.content)
     if (!useAudio) return { text: reply };
 
-    const buffer = await createSpeech(reply, prompt);
+    const audio = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: "alloy",
+        input: reply,
+        response_format: 'mp3',
+    });
+    const buffer = Buffer.from(await audio.arrayBuffer());
+    // const buffer = await createSpeech(reply, prompt);
     const name = prompt.length > 9 ? prompt.substr(0, 10) + '...' : prompt;
     return { media: FileBox.fromBuffer(buffer, `${name}.mp3`) };
 }
 
 export async function getOpenAiImage(prompt) {
     const resp = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: MODEL,
         messages: [
             { "role": "system", content: "你是一个优秀的dall-e-3模型的提示词专家，接下去需要你对这段prompt进行更加详细的优化。" },
             { "role": "user", content: prompt }
         ]
     });
     const nPrompt = resp.choices[0].message.content;
-    // console.log('> o', prompt);
-    // console.log('> n', nPrompt);
-
     const res = await openai.images.generate({
         model: "dall-e-3",
         prompt: nPrompt,
