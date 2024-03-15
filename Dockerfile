@@ -51,6 +51,7 @@ WORKDIR /app
 
 COPY package.json ./
 RUN npm config set registry ${NPM_REGISTRY} && npm i
+RUN npm i wx-voice -g && wx-voice compile
 
 COPY *.js ./
 COPY src/ ./src/
