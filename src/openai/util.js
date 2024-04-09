@@ -16,7 +16,8 @@ const speechConfig = micSdk.SpeechConfig.fromSubscription(
     env.AZURE_SPEECH_REGION,
 );
 speechConfig.speechSynthesisOutputFormat = 5;
-speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural";
+speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoMultilingualNeural";
+// speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural";
 // speechConfig.speechSynthesisVoiceName = "zh-CN-henan-YundengNeural";
 
 const getType = {

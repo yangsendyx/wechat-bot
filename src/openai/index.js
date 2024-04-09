@@ -47,14 +47,14 @@ export async function getOpenAiReply(prompt, useAudio) {
     const reply = markdownToText(resp.choices[0].message.content)
     if (!useAudio) return { text: reply };
 
-    const audio = await openai.audio.speech.create({
+    /* const audio = await openai.audio.speech.create({
         model: "tts-1",
         voice: "alloy",
         input: reply,
         response_format: 'mp3',
     });
-    const buffer = Buffer.from(await audio.arrayBuffer());
-    // const buffer = await createSpeech(reply, prompt);
+    const buffer = Buffer.from(await audio.arrayBuffer()); */
+    const buffer = await createSpeech(reply, prompt);
     const name = prompt.length > 9 ? prompt.substr(0, 10) + '...' : prompt;
     return { media: FileBox.fromBuffer(buffer, `${name}.mp3`) };
 }
